@@ -87,6 +87,11 @@ redis.rpush('lposlist', 'foo', 'bar', 'baz');
 redis.lpos('lposlist', 'foo').then(console.log);
 redis.lpos('lposlist', 'baz', 0, 1, 3).then(console.log);
 
+redis.lmove('source', 'destination', 'LEFT', 'RIGHT').then(console.log);
+redis.lmove('source', 'destination', 'RIGHT', 'LEFT', cb);
+redis.blmove('source', 'destination', 'LEFT', 'RIGHT', 0).then(console.log);
+redis.blmove('source', 'destination', 'RIGHT', 'LEFT', 0, cb);
+
 // Test OverloadedKeyCommand
 redis.hdel('foo', 'bar').then(console.log);
 redis.hdel('foo', 'bar', cbNumber);
@@ -270,6 +275,11 @@ redis.get('foo').then((result: string | null) => {
 redis.sadd('set', 1, 3, 5, 7);
 redis.sadd('set', [1, 3, 5, 7]);
 
+// Test for ISMEMBER and MISMEMBER
+redis.sadd('set', 'val1', 'val2');
+redis.sismember('set', 'val1').then(console.log);
+redis.smismember('set', ...['val1', 'val2', 'val3']).then(console.log);
+
 // All arguments are passed directly to the redis server:
 redis.set('key', '100');
 redis.set('key', '100', 'XX');
@@ -297,6 +307,15 @@ const listData = ['foo', 'bar', 'baz'];
 listData.forEach(value => {
     redis.rpushBuffer('bufferlist', Buffer.from(value));
 });
+
+redis.lindexBuffer('bufferlist', 0, (err, result) => {
+    if (result.toString() !== listData[0]) {
+        console.log(result.toString());
+    }
+});
+
+redis.lindexBuffer('bufferlist', 0).then(console.log);
+
 redis.lpopBuffer('bufferlist', (err, result) => {
     if (result.toString() !== listData[0]) {
         console.log(result.toString());
@@ -551,13 +570,15 @@ redis.xadd('streamName', 'MAXLEN', 100, '*', 'field', 'name');
 redis.xadd('streamName', 'MAXLEN', '~', 100, '*', 'field', 'name');
 redis.xclaim('streamName', 'groupName', 'consumerName', 3600000, 'id').then(console.log);
 redis.xclaim('streamName', 'groupName', 'consumerName', 3600000, 'id', cb);
+redis.xautoclaim('streamName', 'groupName', 'consumerName', 3600000, 'id').then(console.log);
 redis.xdel('streamName', 'id').then(console.log);
 redis.xdel('streamName', 'id', cbNumber);
 redis.xgroup('CREATE', 'streamName', 'groupName', '$').then(console.log);
 redis.xgroup('CREATE', 'streamName', 'groupName', '$', cb);
 redis.xgroup('SETUP', 'streamName', 'groupName', '$');
 redis.xgroup('DESTROY', 'streamName', 'groupName');
-redis.xgroup('DELCONSUMER', 'streamName', 'groupName', 'consumerName');
+redis.xgroup('CREATECONSUMER', 'streamName', 'groupName', 'consumerName').then(console.log);
+redis.xgroup('DELCONSUMER', 'streamName', 'groupName', 'consumerName').then(console.log);
 redis.xinfo('CONSUMERS', 'streamName', 'groupName').then(console.log);
 redis.xinfo('CONSUMERS', 'streamName', 'groupName', cb);
 redis.xinfo('GROUPS', 'streamName');
